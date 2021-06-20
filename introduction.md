@@ -16,9 +16,10 @@
 在日常工作里也是有重排序的，任务有多个当然优先做简单的或沟通成本低的
 
 下面这个例子一共有几种可能？
+
 ![img.png](img.png)
-找找Java并发编程实战里的例子
-https://tech.meituan.com/2014/09/23/java-memory-reordering.html
+
+Java并发编程实战里的例子
 
 #### TSO模型(Total Store Ordering)与JVM提供的四种内存屏障
 
