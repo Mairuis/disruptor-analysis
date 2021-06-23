@@ -21,7 +21,7 @@
 
 读: 私有的storebuffer是否命中，如果没命中则查找cache
 
-写: 写入storebuffer，如果sb满了或遇到同步指令才真正写入内存
+写: 写入storebuffer，如果sb满了或遇到同步指令才真正写入内存,写入操作保证FIFO顺序
 
 ![img_1.png](img_1.png)
 
@@ -31,6 +31,7 @@
 ![volatile-example.png](volatile-example.png)
 
 执行结果:
+
 ![volatile-run-result.png](volatile-run-result.png)
 
 ### 缓存行
@@ -38,6 +39,8 @@
 Cache是由很多个cache line组成的。 每个cache line通常是64字节，并且它有效地引用主内存中的一块儿地址。 一个Java的long类型变量是8字节，因此在一个缓存行中可以存8个long类型的变量。
 CPU每次从主存中拉取数据时，会把与目标数据相邻的数据存入同一个cache line。 和某些机械硬盘即便你的指令读取的数据只有1字节但它每次还是会读512个字节同理。
 在访问一个long数组的时候，如果数组中的一个值被加载到缓存中，它会自动加载另外7个。因此你能非常快的遍历这个数组。
+
+![cache-line.png](cache-line.png)
 
 ##### 利用缓存行带来的性能提升
 
@@ -99,19 +102,48 @@ https://github.com/redis/redis/blob/unstable/src/replication.c#L28
 
 #### 在关键点插入内存屏障保证可见性，避免过多的缓存同步
 
-## Disruptor的设计实现
+#### 只有一个指针的环形数组
 
-#### 二阶段提交
+如何保证环数据不被覆盖
+如何实现高性能索引
+如何实现无GC
 
 #### 无锁序列 Sequence 实现无锁事务Id自增，同时增加内存填充防止伪共享
 
-#### 只有一个指针的环形数组
+内存填充 + CAS自增Id,实现无锁 解决伪共享问题
 
+## Disruptor的数据递交设计实现
+
+#### 各种组合模型
+
+P -> C
+
+P -> C1,C2,C3
+
+#### 两端不同的并发模型
+单P情况
+1.第一阶段 申请N : 将线程本地缓存的next + N个事务号
+2.第二阶段 发布N : 将Sequence事务号setVolatile到next + N
+
+多P情况
+1.第一阶段 申请N : 将Sequence事务号setVolatile到next + N
+2.第二阶段 发布N : 
+
+单线程C情况：
+
+多线程C情况：
+
+![simple-disruptor.png](simple-disruptor.png)
 
 ## Disruptor的应用
+
+#### logback
+把消费模型画出来
 
 ## 参考
 
 [高性能队列——Disruptor - 美团技术团队](https://tech.meituan.com/2016/11/18/disruptor.html)
 
 [Mechanical Sympathy For False Sharing](https://mechanical-sympathy.blogspot.com/2011/07/false-sharing.html)
+
+[Advanced Operating Systems COMP9242 2002/S2 ](http://www.cse.unsw.edu.au/~cs9242/02/lectures/10-smp/node8.html)
